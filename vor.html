@@ -3,8 +3,12 @@
 	<head>
 		<title>VOR Simulator</title>
 		<style type="text/css">
-			canvas#plan { border: 1px solid #030; background: #d5d9cb; }
+			body { font-family: Tahoma, Helvetica, Arial; font-size: 14px; }
+			input, select, submit, button { font-family: Tahoma; Helvetica, Arial; font-size: 13px; font-weight: bold; }
+			input#input-heading { text-align: center; }
+			canvas#plan { border: 1px solid #030; background: #ccddbb; }
 			canvas.instrumentX { border: 1px solid #000; background: #111; }
+			div#form { clear: both; width: 480px; text-align: center; }
 		</style>
 	</head>
 
@@ -15,11 +19,18 @@
 		<div id="indicator" style="float: left;">
 			<canvas id="vor1" class="instrument" width="200" height="200"></canvas>
 		</div>
+
+		<div id="form">
+			Airplane heading:<br>
+			<input type="text" name="heading" id="input-heading" value="360" size="3" maxlength="3" onchange="sim.updateAirplaneHeading(this);">
+			<button onclick="sim.turnAirplaneBy(-10);">&minus;</button>
+			<button onclick="sim.turnAirplaneBy(+10);">&plus;</button>
+		</div>
+
 	</body>
 </html>
 
 <script type="text/javascript">
-
 /***********************************************/
 /* Copyright (C) 2013 by Dondi Michael Stroma. */
 /* All rights reserved.                        */
@@ -40,6 +51,17 @@ function circle(a){
 
 
 var sim = {
+
+	updateAirplaneHeading: function(elem){
+		sim.airplane.heading = elem.value;
+		sim.overhead.draw();
+	},
+	turnAirplaneBy: function(amount){
+		sim.airplane.heading = circle(sim.airplane.heading + amount);
+		document.getElementById('input-heading').value = sim.airplane.heading;
+		sim.overhead.draw();
+	},
+
 	overhead: {
 
 		canvas: null,
@@ -94,7 +116,7 @@ var sim = {
 			ctx.clearRect(0, 0, 480, 480);
 			
 			sim.overhead.drawStation(sim.vor1.location[0], sim.vor1.location[1], 2);
-			sim.overhead.drawAirplane(sim.airplane.location[0], sim.airplane.location[1], 360, 2);
+			sim.overhead.drawAirplane(sim.airplane.location[0], sim.airplane.location[1], sim.airplane.heading, 2);
 		},
 
 		drawStation: function(ox, oy, scale){
@@ -136,6 +158,12 @@ var sim = {
 			var x = ox;
 			var y = oy;
 
+			if (!heading) heading = 0;
+
+			ctx.translate(x, y);
+			ctx.rotate(Math.PI*2*(heading/360));
+			ctx.translate(-x, -y);
+
 			ctx.beginPath();
 			ctx.strokeStyle = '#d956ff';
 			ctx.moveTo(x, y - 7*scale);
@@ -145,11 +173,17 @@ var sim = {
 			ctx.moveTo(x - 3*scale, y + 5*scale);
 			ctx.lineTo(x + 3*scale, y + 5*scale);
 			ctx.stroke();
+
+			ctx.translate(x, y);
+			ctx.rotate(-Math.PI*2*(heading/360));
+			ctx.translate(-x, -y);
+
 		},
 	},
 
 	airplane: {
 		location: [100, 100],
+		heading:  360,
 	},
 
 	vor1: {
@@ -528,16 +562,17 @@ sim.vor1.canvas.addEventListener('mousedown', function(event){
 	var mousePos = sim.vor1.canvas.getMousePos(event);
 	var onKnob   = sim.vor1.isMouseOnObsKnob(mousePos);
 	if (onKnob) {
-		isClickingObsKnob = setInterval(function(){
-			isHoldingObsKnob = true;
-			sim.vor1.obsSetting = sim.vor1.obsSetting + 4*onKnob;
-			if (sim.vor1.obsSetting < 0)
-				sim.vor1.obsSetting = 360 + sim.vor1.obsSetting;
-			else if (sim.vor1.obsSetting > 359)
-				sim.vor1.obsSetting = sim.vor1.obsSetting - 360;
-			sim.vor1.draw();
-			sim.vor1.update();
-		}, 200);
+		isClickingObsKnob = setTimeout(function(){
+			isHoldingObsKnob = setInterval(function(){
+				sim.vor1.obsSetting = sim.vor1.obsSetting + 2*onKnob;
+				if (sim.vor1.obsSetting < 0)
+					sim.vor1.obsSetting = 360 + sim.vor1.obsSetting;
+				else if (sim.vor1.obsSetting > 359)
+					sim.vor1.obsSetting = sim.vor1.obsSetting - 360;
+				sim.vor1.draw();
+				sim.vor1.update();
+			}, 50);
+		}, 400);
 	}
 }, false);
 
@@ -547,7 +582,8 @@ sim.vor1.canvas.addEventListener('mousemove', function(event){
 	if (isClickingObsKnob || isHoldingObsKnob) {
 		var onKnob = sim.vor1.isMouseOnObsKnob(mousePos);
 		if (!onKnob) {
-			clearInterval(isClickingObsKnob);
+			if (isClickingObsKnob) clearTimeout(isClickingObsKnob);
+			if (isHoldingObsKnob) clearInterval(isHoldingObsKnob);
 			isClickingObsKnob = false;
 			isHoldingObsKnob  = false;
 		}
@@ -556,7 +592,8 @@ sim.vor1.canvas.addEventListener('mousemove', function(event){
 
 
 sim.vor1.canvas.addEventListener('mouseup', function(event){
-	if (isClickingObsKnob) clearInterval(isClickingObsKnob);
+	if (isClickingObsKnob) clearTimeout(isClickingObsKnob);
+	if (isHoldingObsKnob) clearInterval(isHoldingObsKnob);
 	var mousePos = sim.vor1.canvas.getMousePos(event);
 	var onKnob   = sim.vor1.isMouseOnObsKnob(mousePos);
 	if (onKnob && !isHoldingObsKnob) {
@@ -589,5 +626,10 @@ sim.vor1.canvas.addEventListener('click', function(event){
 	}
 }, false);
 */
+
+document.getElementById('input-heading').value = 360;
+sim.airplane.heading = 360;
+
+alert("Welcome to the VOR simulator!\n\nClick and drag the miniature airplane in the overhead view to move it. You can also adjust its heading by entering a new heading in the box below the overhead view or using the plus/minus buttons.\n\nClick the right half of the OBS knob on the VOR indicator to increase the OBS selection; click the left half to decrease it. Hold the mouse button down to spin it faster!\n\nHave fun.");
 
 </script>
