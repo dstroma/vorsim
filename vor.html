@@ -53,20 +53,18 @@
 /*                                             */
 /***********************************************/
 
-function circle(a){
-	// Add or subtract 360 degrees as needed so 0 < a < 360
-	var original_a = a;
-	if (a < 0)
-		a = a + 360;
-	else if (a > 359)
-		a = a - 360;
-	if (a < 0 || a > 359) circle(a);
-//	console.log('Original a: ' + original_a + ', new a: ' + a);
-	return a;
-}
-
-
 var sim = {
+
+	util: {
+		circle: function(a){
+			if (a < 0)
+				a = a + 360;
+			else if (a > 359)
+				a = a - 360;
+			if (a < 0 || a > 359) this.circle(a);
+			return a;
+		}
+	},
 
 	updateAirplaneHeading: function(elem){
 		var v = parseInt(elem.value, 10);
@@ -79,7 +77,7 @@ var sim = {
 	},
 
 	turnAirplaneBy: function(amount){
-		sim.airplane.heading = circle(sim.airplane.heading + amount);
+		sim.airplane.heading = sim.util.circle(sim.airplane.heading + amount);
 		document.getElementById('input-heading').value = sim.airplane.heading;
 		sim.overhead.draw();
 	},
@@ -523,8 +521,8 @@ var sim = {
 
 	calculateCdiDeflection: function(station, aircraft){
 
-		var actRad = circle(sim.calculateRadial(station, aircraft));
-		var obsRad = circle(station.obsSetting);
+		var actRad = sim.util.circle(sim.calculateRadial(station, aircraft));
+		var obsRad = sim.util.circle(station.obsSetting);
 
 		var diff   = -1 * (actRad - obsRad);
 
