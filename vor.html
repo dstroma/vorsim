@@ -92,7 +92,6 @@ var sim = {
 		sim.airplane.heading  = hdg;
 		sim.overhead.draw();
 		sim.vor1.draw();
-		sim.vor1.update();
 
 		/* TODO: Allow the airplane heading setter to accept a callback so that we can update the heading input textbox */
 		document.getElementById('input-heading').value = sim.airplane.heading;	
@@ -277,12 +276,25 @@ var sim = {
 		},
 
 		draw: function(){
+			/* Calculate CDI position */
+			var stat = sim.calculateCdiDeflection(this, sim.airplane);
+			this.cdiDisplacement = stat.cdiDeflect;
+			if (stat.from == null)
+				this.to_from = 'X';
+			else if (stat.from == true)
+				this.to_from = 'from';
+			else if (stat.from == false)
+				this.to_from = 'to';
+
 			var c     = this.getCanvas();
 			var ctx   = c.getContext("2d");
 
 			var outerRadius = this.canvasSize[0] * 0.45;
 			var scaleRadius = this.canvasSize[0] * 0.33;
 			var dotSpacing  = scaleRadius*2 / 12;
+
+			// Erase it
+			ctx.clearRect(0, 0, this.canvasSize[0], this.canvasSize[1]);
 
 			// Draw inner CDI portion
 			ctx.beginPath();
@@ -298,7 +310,7 @@ var sim = {
 			ctx.beginPath();
 			ctx.lineWidth = 2;
 			ctx.arc(this.canvasSize[0]/2, this.canvasSize[1]/2, scaleRadius, 0, Math.PI*2, true);
-			ctx.strokeStyle = 'white';
+			ctx.strokeStyle = 'yellow';
 			ctx.stroke();
 */
 
@@ -338,10 +350,10 @@ var sim = {
 				}
 			}
 
-			// Draw black area for obs compass rose
+			// Draw black area for obs compass rose (must be on top of needle)
 			ctx.beginPath();
-			ctx.lineWidth = (outerRadius-scaleRadius)*0.75;
-			ctx.arc(this.canvasSize[0]/2, this.canvasSize[1]/2, outerRadius - (outerRadius - scaleRadius)/2, 0, Math.PI*2, true);
+			ctx.lineWidth = (outerRadius-scaleRadius)*0.85;
+			ctx.arc(this.canvasSize[0]/2, this.canvasSize[1]/2, outerRadius + 1 - (outerRadius - scaleRadius)/2, 0, Math.PI*2, true);
 			ctx.strokeStyle = 'black';
 			ctx.stroke();
 
@@ -466,15 +478,6 @@ var sim = {
 		},
 
 		update: function(){
-			var stat = sim.calculateCdiDeflection(this, sim.airplane);
-			this.cdiDisplacement = stat.cdiDeflect;
-			if (stat.from == null)
-				this.to_from = 'X';
-			else if (stat.from == true)
-				this.to_from = 'from';
-			else if (stat.from == false)
-				this.to_from = 'to';
-			this.draw();
 		},
 	},
 
@@ -561,7 +564,6 @@ var sim = {
 sim.vor1.location = [sim.overhead.canvasSize[0]/2, sim.overhead.canvasSize[1]/2];
 
 sim.vor1.draw();
-sim.vor1.update();
 
 sim.overhead.draw();
 
@@ -581,7 +583,7 @@ sim.overhead.canvas.addEventListener('mousemove', function(event){
 	if (sim.airplane.isDragging == true) {
 		sim.airplane.location = [mousePos.x, mousePos.y];
 		sim.overhead.draw();
-		sim.vor1.update();
+		sim.vor1.draw();
 	} else {
 		if (sim.overhead.isMouseOnAirplane(mousePos.x, mousePos.y)) {
 			document.body.style.cursor = 'pointer';
@@ -628,7 +630,6 @@ sim.vor1.canvas.addEventListener('mousedown', function(event){
 				else if (sim.vor1.obsSetting > 359)
 					sim.vor1.obsSetting = sim.vor1.obsSetting - 360;
 				sim.vor1.draw();
-				sim.vor1.update();
 			}, 50);
 		}, 400);
 	}
@@ -664,7 +665,6 @@ sim.vor1.canvas.addEventListener('mouseup', function(event){
 			sim.vor1.obsSetting = sim.vor1.obsSetting - 360;
 		//end if
 		sim.vor1.draw();
-		sim.vor1.update();
 	}
 	isClickingObsKnob = false;
 	isHoldingObsKnob  = false;
