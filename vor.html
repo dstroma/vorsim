@@ -449,18 +449,28 @@ var sim = {
 */
 
 			// Draw OBS knob
+			var obsx = this.canvasSize[0]/2*0.333;
+			var obsy = this.canvasSize[1]/2*1.667;
 			ctx.beginPath();
 			ctx.lineWidth = 2;
-			ctx.arc(this.canvasSize[0]/2*0.333, this.canvasSize[1]/2*1.667, 15, 0, Math.PI*2, true);
+			ctx.arc(obsx, obsy, 15, 0, Math.PI*2, true);
 			ctx.strokeStyle = 'white';
 			ctx.stroke();
 			ctx.fillStyle="black";
 			ctx.fill();
 			ctx.fillStyle = '#DDBB00';
+
+			// Draw OBS knob label
 			ctx.font = "10px Helvetica";
 			ctx.textAlign = "center";
-			ctx.fillText('OBS', this.canvasSize[0]/2*0.333 + 0, this.canvasSize[1]/2*1.667 + 3);
-			this.obsKnobLocation = { x: this.canvasSize[0]/2*0.333, y: this.canvasSize[1]/2*1.667, r: 12 };
+			ctx.translate(obsx, obsy);
+			ctx.rotate(+Math.PI*2*(this.obsSetting/360));
+			ctx.fillText('OBS', 0, 3);
+			ctx.rotate(-Math.PI*2*(this.obsSetting/360));
+			ctx.translate(-obsx, -obsy);
+
+
+			this.obsKnobLocation = { x: obsx, y: obsy, r: 12 };
 			console.log('OBS knob coordinates: ' + this.obsKnobLocation.x + ', ' + this.obsKnobLocation.y);
 
 			/*
